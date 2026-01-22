@@ -101,7 +101,7 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 
 Windows (paste into PowerShell):
 ```powershell
-irm https://astral.sh/uv/install.ps1 | iex
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
 ```
 
 After installation, close and reopen your terminal, then check:
