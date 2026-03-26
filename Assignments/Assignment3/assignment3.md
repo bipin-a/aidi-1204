@@ -96,7 +96,7 @@ data/gold/     ← analysis-ready dataset for Part 2
 
 ## Choose One API Pack
 
-Each team must choose **one** of the following packs and use the **2 required APIs** in that pack.
+You must choose **one** of the following packs and use the **2 required APIs** in that pack.
 
 These packs are meant to make the project easier to think about. Each one gives you:
 - a natural data story,
@@ -455,7 +455,7 @@ Your video must:
 - include **audio narration**
 - clearly walk through your ETL pipeline
 - explain how your Gold dataset is designed for later statistical analysis
-- describe at least one hardship, bug, or challenge your team encountered and how you handled it
+- describe at least one hardship, bug, or challenge you encountered and how you handled it
 
 **Screenshots are not required.**
 
@@ -473,7 +473,7 @@ In your demo video, you should show and explain:
 - at least one derived feature you created for Part 2
 - one statistical question you may answer later
 - which statistical test you think may be appropriate, and why
-- one hardship, debugging issue, or design challenge your team faced
+- one hardship, debugging issue, or design challenge you faced
 
 The goal of the demo is not just to prove that the code runs. The goal is to show that you understand:
 - the pipeline you built,
