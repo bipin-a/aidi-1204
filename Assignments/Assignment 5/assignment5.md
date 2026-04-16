@@ -1,25 +1,29 @@
 # Assignment 5: Comparative Binary Classification with XGBoost
 
-**Theme:** production-grade model comparison for an imbalanced tabular classification problem  
-**Primary model family:** XGBoost, compared against strong baselines  
-**Deliverables:** Jupyter notebook, short results summary, and walkthrough video
+**Theme:** learning the machine learning process, not chasing a perfect score  
+**Main model:** XGBoost  
+**Main workflow tool:** Codex in VS Code  
+**Deliverables:** new GitHub repository link, notebook, short summary, and 10-minute walkthrough video
 
 ---
 
 ## Overview
 
-In this assignment, you will build a binary classification model that predicts whether a company is likely to go bankrupt. You will compare exactly 10 experiments, justify your metric, control overfitting, select a final model without using the test set, and explain which features matter.
+In this assignment, you will build a binary classification model that predicts whether a company is likely to go bankrupt.
 
-The point of the assignment is not to get the highest possible score by trial and error. The point is to show that you can run a disciplined machine learning workflow:
+You will use Codex to help you code, debug, and organize your work. The goal is not to prove that you are a perfect machine learning engineer. The goal is to learn the process that good machine learning projects follow:
 
-- define the prediction task clearly;
-- split data correctly;
-- avoid target leakage;
-- compare simple and complex models;
-- choose a metric that matches the business problem;
-- tune models without touching the test set;
-- select a final model using validation evidence;
-- explain whether the final model is overfit.
+- define the prediction problem;
+- understand the target variable;
+- split the data correctly;
+- avoid data leakage;
+- compare simple models against stronger models;
+- choose a metric that makes sense for the problem;
+- try a smaller feature set;
+- pick a final model without cheating on the test set;
+- explain whether the model is overfit.
+
+This assignment is designed to be doable in a few focused days if you build one reusable evaluation function and use Codex effectively.
 
 ---
 
@@ -34,22 +38,36 @@ Use the workshop dataset:
 - Approximate shape: 6,819 rows and 96 columns
 - Approximate class balance: 220 bankrupt companies and 6,599 non-bankrupt companies, about 3.2% positive class
 
-Use only `training/data.csv` for modeling. Do not use `model.json`, `inference_test.csv`, `catboost_info`, or any pretrained artifact from the workshop repository.
+Use only `training/data.csv` for modeling.
+
+Do not use:
+
+- `model.json`
+- `inference_test.csv`
+- `catboost_info`
+- any pretrained model artifact from the workshop repo
 
 ---
 
 ## Business Context
 
-You are building a risk screening model for a lender or investment risk team. The model should identify companies at elevated bankruptcy risk before money is lent, invested, or extended as credit.
+You are helping a risk team identify companies that may go bankrupt.
 
-The classes are highly imbalanced, and the error costs are asymmetric:
+This is an imbalanced classification problem. Most companies do not go bankrupt, so accuracy can be misleading. A model that predicts "not bankrupt" almost every time can look accurate while still being useless.
 
-- False negative: the model predicts safe, but the company goes bankrupt.
-- False positive: the model predicts risky, but the company does not go bankrupt.
+For this assignment, assume this business rule:
 
-For this assignment, assume a false negative is about 7 times more costly than a false positive. This cost asymmetry must influence your metric choice and threshold choice.
+```text
+Missing a bankrupt company is worse than incorrectly flagging a healthy company.
+```
 
-Plain accuracy is not acceptable as the primary metric because a model can predict "not bankrupt" for almost every company and still look accurate.
+In other words:
+
+- false negative = predicted safe, actually bankrupt;
+- false positive = predicted risky, actually not bankrupt;
+- false negatives matter more.
+
+You do not need to build a perfect cost model. You do need to choose a metric that respects this imbalance and risk.
 
 ---
 
@@ -57,16 +75,15 @@ Plain accuracy is not acceptable as the primary metric because a model can predi
 
 By the end of this assignment, you should be able to:
 
-1. Build a reproducible binary classification pipeline for tabular data.
-2. Explain class imbalance and why accuracy can be misleading.
-3. Compare multiple model families against a simple benchmark.
-4. Use XGBoost with appropriate validation discipline.
-5. Create and justify multiple feature sets.
-6. Select a primary metric that matches the business risk.
-7. Choose a classification threshold using validation data only.
-8. Track overfitting using train, validation, test, and cross-validation results.
-9. Interpret the final model using feature importance or SHAP.
-10. Communicate results concisely in a decision-focused report.
+1. Build a basic binary classification pipeline.
+2. Explain why train, validation, and test splits are separate.
+3. Explain why accuracy is a weak metric for imbalanced data.
+4. Compare multiple models using the same evaluation process.
+5. Use XGBoost as a strong model candidate.
+6. Try a reduced feature set and explain the tradeoff.
+7. Track overfitting using train and validation scores.
+8. Select a final model using validation results, not test results.
+9. Use Codex productively without blindly trusting it.
 
 ---
 
@@ -78,102 +95,136 @@ You may use:
 - numpy
 - scikit-learn
 - xgboost
-- catboost
+- catboost, optional
 - matplotlib
 - seaborn
-- shap
+- shap, optional
 
 You may not use neural networks or deep learning models.
 
 ---
 
+## Codex Requirement
+
+You are expected to use Codex in VS Code while working on this assignment.
+
+Good uses of Codex include:
+
+- asking it to create a reusable evaluation function;
+- asking it to help fix errors;
+- asking it to generate plotting code;
+- asking it to explain confusing model results;
+- asking it to help simplify messy notebook cells;
+- asking it to check whether you accidentally used the test set too early.
+
+Bad uses of Codex include:
+
+- submitting code you cannot explain;
+- accepting a metric choice without thinking about the class imbalance;
+- letting Codex tune on the test set;
+- copying a final answer without checking that the notebook runs.
+
+Your summary must include a short **AI Usage** section with 3 to 5 bullets:
+
+- which AI tool you used;
+- what it helped with;
+- one thing you had to verify or fix yourself;
+- one mistake or bad suggestion you caught, if any.
+
+---
+
 ## Required Notebook Structure
 
-Your notebook must run top-to-bottom without errors and must use a fixed random seed.
+Your notebook must run from top to bottom without errors.
 
-Organize the notebook in this order.
+Use this order.
 
 ### 1. Problem Definition
 
-Clearly state:
+State:
 
-- the target variable;
-- what the positive class means;
-- why bankruptcy prediction matters;
-- whether the data is balanced or imbalanced;
-- why the error costs are asymmetric;
-- which metric you will use as the primary metric.
+- target variable;
+- positive class;
+- why the prediction task matters;
+- whether the classes are balanced or imbalanced;
+- your primary metric.
 
-### 2. EDA
+### 2. Quick EDA
 
-Keep EDA brief and decision-focused. Include no more than about 10 plots.
+Keep this short. You are not being graded on beautiful plots.
 
-You must report:
+You must show:
 
 - dataset shape;
 - target distribution;
-- missing values;
-- duplicate rows, if any;
-- numeric feature ranges or suspicious values;
-- correlation or redundancy patterns;
-- at least one EDA finding that changes your pipeline.
+- missing value count;
+- duplicate row count;
+- at least one simple plot of the target distribution;
+- one observation that affects your modeling choices.
 
-Do not include plots that do not influence a modeling decision.
+Example observation:
 
-### 3. Splitting Strategy
+```text
+Only about 3.2% of rows are bankrupt, so I will not use accuracy as my primary metric.
+```
 
-Create a three-way split:
+### 3. Train, Validation, Test Split
+
+Use this split:
 
 | Split | Percent | Purpose |
 |---|---:|---|
-| Train | 70% | Model fitting and 5-fold CV |
-| Validation | 15% | Model selection, threshold selection, early stopping |
-| Test | 15% | Final one-time evaluation only |
+| Train | 70% | Fit models |
+| Validation | 15% | Compare models and choose threshold |
+| Test | 15% | Final check only |
 
 Requirements:
 
 - Use stratified sampling.
-- Report class balance in train, validation, and test.
-- Do not inspect test performance until the final model has been selected.
-- Do not use the test set for feature selection, threshold selection, early stopping, or hyperparameter tuning.
+- Show the class balance in each split.
+- Do not use the test set until the final section of the notebook.
+
+This rule matters more than almost anything else in the assignment.
 
 ### 4. Preprocessing
 
+Do the minimum preprocessing needed to make the models work.
+
 You must:
 
-- identify numerical and categorical features, even if all features are numeric;
-- handle missing values if present;
-- scale features only for models that need scaling, such as logistic regression, KNN, or SVM;
-- avoid scaling tree-based models unless you justify it;
-- check for target leakage and suspicious features;
-- build preprocessing in a reproducible way using pipelines where appropriate.
+- separate `X` and `y` correctly;
+- remove the target from the feature matrix;
+- identify whether the data has categorical features;
+- handle missing values if any exist;
+- scale only the models that need scaling, such as logistic regression, KNN, or SVM;
+- briefly check for obvious leakage columns.
 
-### 5. Feature Engineering and Feature Selection
+Most features in this dataset are already numeric, so do not overcomplicate this section.
 
-You must create and justify at least two feature sets.
+### 5. Feature Sets
 
-| Feature set | Requirement |
+Create two feature sets.
+
+| Feature set | Meaning |
 |---|---|
-| Feature Set A | Full cleaned predictor set |
-| Feature Set B | Reduced or selected predictor set |
+| Feature Set A | All usable features after basic cleaning |
+| Feature Set B | Smaller selected feature set |
 
-Feature Set B must be selected using one or more of the following:
+Feature Set B can be simple. Choose one approach:
 
-- correlation or redundancy analysis;
-- model-based feature importance;
-- permutation importance;
-- mutual information;
-- domain reasoning;
-- removal of leakage-prone, constant, duplicate, or weak features.
+- keep the top 20 to 30 features from an XGBoost feature importance model;
+- remove highly correlated duplicate-like features;
+- remove constant or almost-constant features;
+- use another reasonable feature selection method.
 
-You must explain:
+Explain in 3 to 5 bullets:
 
-- what you removed or transformed;
-- why you removed or transformed it;
-- whether performance improved or worsened;
-- whether the selected feature set made the model simpler or more stable.
+- how you selected Feature Set B;
+- how many features were kept;
+- whether performance got better, worse, or stayed similar;
+- whether the smaller feature set is easier to explain.
 
-Feature selection must be done without using the test set.
+Do not use the test set for feature selection.
 
 ---
 
@@ -181,135 +232,148 @@ Feature selection must be done without using the test set.
 
 You must run exactly 10 experiments.
 
-| # | Model | Required role |
-|---:|---|---|
-| 1 | Dummy Classifier | Naive baseline, such as majority class or stratified random |
-| 2 | Logistic Regression | Simple benchmark that every serious model should beat |
-| 3 | Regularized Logistic Regression | Tune regularization and class weighting if appropriate |
-| 4 | Decision Tree | Interpretable non-linear baseline |
-| 5 | Random Forest | Bagged tree ensemble baseline |
-| 6 | KNN or SVM | Distance or margin-based comparison model |
-| 7 | CatBoost baseline | Boosting baseline with minimal tuning |
-| 8 | XGBoost baseline | Default or lightly configured XGBoost |
-| 9 | XGBoost tuned | Tuned hyperparameters with validation discipline |
-| 10 | Selected-feature XGBoost | Tuned XGBoost using Feature Set B |
+The easiest way to finish this assignment is to write one function that trains a model, evaluates it, and adds one row to a results table.
 
-Rules:
+Use these 10 experiments:
 
-- Experiments must be meaningfully different.
-- At least one XGBoost experiment must use early stopping.
-- CatBoost must use early stopping or a clear validation-based tuning process.
-- At least one experiment must use Feature Set B.
-- At least one experiment must address class imbalance using class weights, `scale_pos_weight`, thresholding, or another justified method.
-- Hyperparameter tuning must be done using the training set and validation set only, never the test set.
+| # | Model | Feature set | Purpose |
+|---:|---|---|---|
+| 1 | Dummy Classifier | A | Baseline |
+| 2 | Logistic Regression | A | Simple benchmark |
+| 3 | Logistic Regression with class weight | A | Simple imbalance-aware model |
+| 4 | Decision Tree | A | Simple non-linear model |
+| 5 | Random Forest | A | Stronger tree baseline |
+| 6 | KNN or SVM | A | Different model family |
+| 7 | XGBoost baseline | A | Main model baseline |
+| 8 | XGBoost with imbalance handling | A | Try `scale_pos_weight` or threshold tuning |
+| 9 | XGBoost tuned lightly | A | Change 3 to 5 important hyperparameters |
+| 10 | XGBoost selected features | B | Test whether fewer features help |
 
----
+CatBoost is optional. If you want to use CatBoost, replace experiment 6 with CatBoost baseline.
 
-## Cross-Validation Requirement
+### What Counts as Tuning?
 
-Use 5-fold stratified cross-validation on the training split for every experiment.
+Keep tuning small and realistic. You do not need a massive grid search.
 
-For each experiment, report:
+For experiment 9, try one of these:
 
-- CV mean score;
-- CV standard deviation;
-- training score after fitting the experiment pipeline;
-- validation score;
-- overfit gap.
+- a small `RandomizedSearchCV` with 10 to 20 candidates;
+- a small manual search over 5 to 8 XGBoost configurations;
+- a Codex-assisted search plan that you document clearly.
 
-Use the same CV setup across experiments so the results are comparable.
-
-Suggested definition:
-
-```text
-overfit_gap = train_primary_metric - validation_primary_metric
-```
-
-If your primary metric is a cost where lower is better, define and explain the gap carefully so the direction is clear.
+Do not tune on the test set.
 
 ---
 
-## Metric Requirement
+## Required Metrics
 
-You must choose one primary metric and justify it.
+You must choose one primary metric.
 
-Because the positive class is rare and false negatives are much more costly than false positives, plain accuracy is not acceptable as the primary metric.
+Because this dataset is imbalanced, **accuracy cannot be your primary metric**.
 
-Strong primary metric choices include:
+Recommended primary metrics:
 
-- expected cost at a validation-selected threshold;
-- F2-score or another F-beta score with beta greater than 1;
-- recall at a fixed precision target;
-- PR-AUC, if paired with a justified threshold rule for final classification.
+- F2-score;
+- recall, if you explain that false negatives are the bigger risk;
+- PR-AUC;
+- balanced accuracy;
+- expected cost, if you want a challenge.
 
-Secondary metrics must include at least two of:
+F2-score is the recommended default for this assignment because it values recall more than precision.
+
+You must also report these secondary metrics for every model:
 
 - precision;
 - recall;
 - F1-score;
-- ROC-AUC;
-- PR-AUC;
-- balanced accuracy;
-- expected cost.
+- Brier score, if the model produces probabilities.
 
-You must defend your metric in about five concise sentences. A good defense references:
+You may report accuracy as extra context, but it cannot drive model selection.
 
-- the 3.2% positive class rate;
-- the 7x false-negative cost assumption;
-- why accuracy is misleading;
-- whether your metric rewards recall, precision, ranking quality, or cost reduction;
-- how your chosen threshold connects to the metric.
+Brier score measures how good the predicted probabilities are, not just whether the final class label is right. Lower Brier score is better. It is useful here because a risk model should produce probabilities that are believable enough to support decisions.
 
-Hard rule: if plain accuracy is used as the primary metric, marks will be deducted.
+### Metric Explanation
+
+In your summary, explain your metric choice in 4 to 6 sentences.
+
+Your explanation must mention:
+
+- the positive class is rare;
+- accuracy is misleading here;
+- false negatives are more serious than false positives;
+- why your metric fits that situation;
+- what Brier score tells you that precision, recall, and F-score do not.
 
 ---
 
 ## Threshold Selection
 
-Do not blindly use a probability threshold of 0.5.
+For models that produce probabilities, you may adjust the classification threshold.
 
-You must:
+To keep this assignment manageable, choose one threshold strategy:
 
-- use `predict_proba` or model scores where available;
-- choose a threshold using the validation set only;
-- explain the threshold rule;
-- report the chosen threshold;
-- use that threshold once on the final test set.
+- use the default threshold of 0.5 and explain why it is a simple baseline;
+- choose the threshold that gives the best F2-score on the validation set;
+- choose a threshold that improves recall while keeping precision reasonable.
 
-Acceptable threshold strategies include:
+If you change the threshold, you must choose it using validation data only.
 
-- threshold that minimizes expected cost on validation data;
-- threshold that maximizes F2 on validation data;
-- threshold that achieves a minimum precision while maximizing recall;
-- threshold chosen from a precision-recall curve with a business justification.
+Use the same chosen threshold when evaluating the final model on the test set.
 
 ---
 
-## Required Results Table
+## Results Table
 
-Your notebook and summary must include one 10-row comparison table.
+Your notebook and summary must include one table with exactly 10 rows.
 
-The table must include these columns:
+Required columns:
 
 | Column | Meaning |
 |---|---|
-| `exp_id` | Experiment number, 1 to 10 |
+| `exp_id` | Experiment number |
 | `model` | Model name |
-| `feature_set` | Feature Set A or Feature Set B |
-| `key_preprocessing` | Scaling, imputation, encoding, imbalance handling |
-| `key_hyperparameters` | Important settings only |
-| `cv_score_mean` | 5-fold CV mean for primary metric |
-| `cv_score_std` | 5-fold CV standard deviation |
+| `feature_set` | A or B |
+| `main_settings` | Short model settings |
 | `train_score` | Training primary metric |
 | `val_score` | Validation primary metric |
-| `overfit_gap` | Train minus validation, or explained equivalent |
-| `val_precision` | Validation precision at chosen threshold |
-| `val_recall` | Validation recall at chosen threshold |
-| `val_f1` | Validation F1 at chosen threshold |
+| `overfit_gap` | `train_score - val_score` |
+| `val_precision` | Validation precision |
+| `val_recall` | Validation recall |
+| `val_f1` | Validation F1-score |
+| `val_brier` | Validation Brier score, if available |
 | `selected_finalist` | Yes or no |
-| `overfitting_notes` | Short comment |
+| `notes` | One short comment |
 
-This table is the center of the assignment. If the table is missing or incomplete, the submission will lose significant marks.
+Optional but encouraged:
+
+- `cv_score_mean`
+- `cv_score_std`
+
+Cross-validation is encouraged but not required. If you use 5-fold stratified CV, include the CV columns and mention it in your summary.
+
+---
+
+## Overfitting Check
+
+For every experiment, calculate:
+
+```text
+overfit_gap = train_score - val_score
+```
+
+A large gap means the model may be memorizing the training data.
+
+You must discuss overfitting for your final model.
+
+Use this rough guide:
+
+| Gap | Interpretation |
+|---:|---|
+| 0.00 to 0.05 | Usually fine |
+| 0.05 to 0.10 | Watch carefully |
+| Above 0.10 | Needs explanation or fixing |
+
+You do not need to make the model perfect. You do need to notice when it is overfit.
 
 ---
 
@@ -317,70 +381,78 @@ This table is the center of the assignment. If the table is missing or incomplet
 
 Choose the final model using this order:
 
-1. Primary metric on validation data.
-2. Overfit gap.
-3. CV stability across folds.
-4. Model simplicity and interpretability.
-5. Test performance only after the final model has already been selected.
+1. Best validation score on your primary metric.
+2. Reasonable overfit gap.
+3. Simpler model if two models perform similarly.
+4. Test score only after the final model is chosen.
 
-You may not pick the final model because it has the best test score.
+Do not pick the winner based on the test set.
 
-A model should be treated as suspicious if:
-
-- training performance is much higher than validation performance;
-- validation performance is unstable across CV folds;
-- validation performance drops sharply on the test set;
-- feature selection was done using test data;
-- hyperparameters were changed after viewing test results.
-
-If the winning model has an overfit gap greater than 0.10 on the primary metric, you must either fix it or explicitly justify why it is acceptable.
+In your summary, write 3 to 5 bullets explaining why your winner was selected.
 
 ---
 
 ## Final Test Evaluation
 
-After selecting the final model, evaluate it once on the untouched test set.
+Only after selecting the final model, evaluate it on the test set.
 
 Report:
 
-- final test primary metric;
+- test score for your primary metric;
 - test precision;
 - test recall;
 - test F1-score;
-- test PR-AUC;
-- test ROC-AUC;
-- confusion matrix at the chosen threshold;
-- classification report;
-- final threshold;
-- final hyperparameters;
-- train, validation, and test primary metric side by side.
+- test Brier score, if available;
+- confusion matrix;
+- final threshold, if you changed it;
+- final model settings.
 
-Include a precision-recall curve for the final model. A ROC curve is optional, but it cannot replace the precision-recall curve for this imbalanced problem.
+Include one final plot:
+
+- precision-recall curve, preferred;
+- or ROC curve, acceptable if you explain that PR curves are usually more useful for imbalanced data.
 
 ---
 
-## Interpretability Requirement
+## Interpretability
 
-For the final model, include one of:
+Include one simple interpretation of the final model.
 
-- SHAP summary plot for the top 10 features;
+Choose one:
+
+- XGBoost feature importance plot;
 - permutation importance plot;
-- XGBoost feature importance plot, if SHAP is not available.
+- SHAP summary plot, optional challenge.
 
-Then explain in 2 to 4 concise jot notes:
+Then write 3 bullets:
 
-- the top features;
-- whether the important features make business sense;
-- whether any important feature looks suspicious or leakage-prone;
+- top feature;
+- whether it makes sense;
 - one limitation of the interpretation.
+
+SHAP is useful, but it is not required. Do not lose a day fighting SHAP installation issues.
 
 ---
 
 ## Deliverables
 
-### 1. Notebook
+### 1. New GitHub Repository
 
-Submit a Jupyter notebook named:
+Create a new GitHub repository for this assignment and submit the repository link.
+
+The repository must include:
+
+- your notebook;
+- your results summary;
+- a `README.md` with setup/run instructions;
+- any helper scripts you created;
+- a `.gitignore` that avoids committing large temporary files, virtual environments, caches, or secrets.
+
+Your repo should be organized enough that another person can understand what to run.
+
+### 2. Notebook
+
+Submit a notebook named:
 
 ```text
 lastname_firstname_assignment5.ipynb
@@ -390,44 +462,46 @@ The notebook must:
 
 - run top-to-bottom without errors;
 - use a fixed random seed;
-- contain the required sections in order;
+- include the required sections;
 - include the 10-row experiment table;
-- keep test-set evaluation until the end.
+- keep the test set untouched until the final evaluation.
 
-### 2. Results Summary
+### 3. Results Summary
 
 Submit a Markdown or PDF summary, maximum 3 pages.
 
-Use jot notes, not long paragraphs.
+Use jot notes. Do not write long paragraphs.
 
 The summary must include:
 
 - problem statement;
 - dataset summary;
 - class imbalance statement;
-- metric choice and five-sentence defense;
-- feature selection strategy;
+- metric choice explanation;
+- feature selection explanation;
 - 10-row experiment table;
 - winning model and why it won;
 - final test results;
 - confusion matrix;
-- top 10 feature importance or SHAP result;
+- feature importance result;
 - overfitting discussion;
-- top 3 things you would do next with another week.
+- AI Usage section.
 
-### 3. Walkthrough Video
+### 4. Walkthrough Video
 
-Submit an 8-minute maximum walkthrough video.
+Submit a 10-minute maximum walkthrough video.
 
-You must walk through:
+Show:
 
-- your metric choice;
+- your GitHub repository structure;
 - your experiment table;
-- your final model selection logic;
-- your threshold choice;
-- your feature importance or SHAP plot.
+- your metric choice;
+- your final model choice;
+- your confusion matrix;
+- your feature importance plot;
+- one example of how Codex helped you.
 
-Do not read the report word for word.
+Do not read your report word for word.
 
 ---
 
@@ -435,17 +509,18 @@ Do not read the report word for word.
 
 | Area | Points | Full-credit evidence |
 |---|---:|---|
-| Problem definition and business framing | 8 | Target, positive class, imbalance, and cost asymmetry are clearly explained |
-| EDA linked to decisions | 8 | EDA findings directly influence preprocessing, feature selection, or metric decisions |
-| Split strategy and leakage control | 10 | Stratified 70/15/15 split, untouched test set, leakage checks documented |
-| Preprocessing pipeline | 8 | Appropriate imputation, scaling, and model-specific preprocessing choices |
-| Feature engineering and feature selection | 10 | Two feature sets, justified removals/transforms, no test-set leakage |
-| 10 experiments | 14 | Exactly 10 meaningful experiments with complete comparison table |
-| Cross-validation and tuning discipline | 10 | 5-fold stratified CV, consistent setup, validation-based tuning only |
-| Metric and threshold choice | 15 | Primary metric fits imbalance and 7x false-negative cost; threshold justified |
-| Overfitting discipline | 10 | Train/val/test scores, overfit gap, early stopping for boosting, gap discussed |
-| Final evaluation and interpretability | 10 | Test metrics, PR curve, confusion matrix, SHAP or importance explanation |
-| Results summary and video | 7 | Concise summary and clear video focused on decisions, not definitions |
+| Problem definition | 7 | Target, positive class, imbalance, and business risk are clear |
+| EDA | 7 | Short EDA with at least one modeling decision |
+| Split and leakage control | 10 | Stratified 70/15/15 split and test set held until the end |
+| Preprocessing | 7 | Sensible cleaning, scaling only when needed, target removed from features |
+| Feature sets | 10 | Full feature set and selected feature set with explanation |
+| 10 experiments | 15 | Exactly 10 experiments in one clear table |
+| Metric choice | 14 | Primary metric fits imbalance; accuracy not used as main metric |
+| Overfitting check | 10 | Train score, validation score, and overfit gap reported |
+| Final test evaluation | 8 | Test metrics, confusion matrix, final settings |
+| Interpretability | 5 | Feature importance or similar explanation |
+| Codex usage | 4 | AI Usage section explains how Codex helped and what was verified |
+| Repository, summary, and video | 3 | GitHub link, concise report, and clear walkthrough |
 | Total | 100 |  |
 
 ---
@@ -454,33 +529,35 @@ Do not read the report word for word.
 
 | Issue | Deduction |
 |---|---:|
-| No benchmark model | -10 |
+| No dummy or simple benchmark model | -10 |
 | Fewer or more than 10 experiments | -10 |
-| Trivial experiment variations | -10 |
-| Plain accuracy used as the primary metric | -10 |
+| Accuracy used as the primary metric | -10 |
 | No `overfit_gap` column | -5 |
-| Test set used for tuning, feature selection, or threshold selection | -20 |
+| Test set used before final evaluation | -20 |
 | No stratified split | -8 |
-| No final confusion matrix | -5 |
-| No PR curve for final model | -5 |
-| No feature importance, permutation importance, or SHAP | -5 |
+| No confusion matrix | -5 |
+| No feature importance or interpretation | -5 |
 | Notebook does not run top-to-bottom | -15 |
+| No GitHub repository link submitted | -10 |
+| No AI Usage section | -5 |
 | Video longer than 10 minutes or read word-for-word | -3 |
 
 ---
 
 ## Recommended Workflow
 
-1. Load `training/data.csv` and confirm the target distribution.
-2. Build the split function first and freeze the test set.
-3. Build the metric and threshold-selection functions before modeling.
-4. Run the dummy and logistic regression baselines.
-5. Add tree-based models and boosting models.
-6. Add cross-validation logging.
-7. Create Feature Set B using training and validation evidence only.
-8. Tune XGBoost with early stopping.
-9. Select the final model using validation score, overfit gap, CV stability, and simplicity.
-10. Evaluate the selected model once on the test set.
+1. Ask Codex to help create a clean notebook outline.
+2. Load the data and inspect the target distribution.
+3. Create the train, validation, and test split.
+4. Write one reusable evaluation function.
+5. Run the dummy model and logistic regression first.
+6. Add tree models.
+7. Add XGBoost models.
+8. Create the selected feature set.
+9. Fill the 10-row results table.
+10. Pick the final model from validation results.
+11. Evaluate once on the test set.
+12. Write the summary in jot notes.
 
 ---
 
@@ -488,19 +565,21 @@ Do not read the report word for word.
 
 Before submitting, verify:
 
+- [ ] I created a new GitHub repository for this assignment.
+- [ ] I included the GitHub repository link in my submission.
 - [ ] I used only `training/data.csv` for modeling.
-- [ ] I reported the class balance in every split.
-- [ ] I used stratified 70/15/15 splitting.
+- [ ] I reported class balance in train, validation, and test.
+- [ ] I used a stratified 70/15/15 split.
 - [ ] I ran exactly 10 experiments.
-- [ ] I included the required 10-row comparison table.
+- [ ] I included one 10-row comparison table.
 - [ ] I chose a primary metric that is not accuracy.
-- [ ] I justified the metric using imbalance and false-negative cost.
-- [ ] I selected a probability threshold using validation data only.
-- [ ] I reported `overfit_gap` for every experiment.
-- [ ] I used early stopping for at least one boosting model.
-- [ ] I did not tune after seeing test performance.
-- [ ] I included final test metrics only at the end.
-- [ ] I included a final confusion matrix.
-- [ ] I included a precision-recall curve.
-- [ ] I included SHAP or another feature importance method.
-- [ ] My notebook runs top-to-bottom without errors.
+- [ ] I explained why the metric fits the problem.
+- [ ] I considered Brier score for probability quality.
+- [ ] I reported train score, validation score, and overfit gap.
+- [ ] I selected the final model before using the test set.
+- [ ] I reported final test metrics.
+- [ ] I included a confusion matrix.
+- [ ] I included feature importance or similar interpretation.
+- [ ] I included an AI Usage section.
+- [ ] I recorded a walkthrough video of 10 minutes or less.
+- [ ] My notebook runs top-to-bottom.
