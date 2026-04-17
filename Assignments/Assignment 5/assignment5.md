@@ -228,37 +228,45 @@ Do not use the test set for feature selection.
 
 ---
 
-## The 10 Required Experiments
+## The 5 Required Experiments
 
-You must run exactly 10 experiments.
+You must run exactly 5 experiments.
 
 The easiest way to finish this assignment is to write one function that trains a model, evaluates it, and adds one row to a results table.
 
-Use these 10 experiments:
+Use the same train, validation, and test split for every experiment. The four XGBoost experiments should use the same cleaned training data, but vary the modeling choices.
+
+Use these 5 experiments:
 
 | # | Model | Feature set | Purpose |
 |---:|---|---|---|
-| 1 | Dummy Classifier | A | Baseline |
-| 2 | Logistic Regression | A | Simple benchmark |
-| 3 | Logistic Regression with class weight | A | Simple imbalance-aware model |
-| 4 | Decision Tree | A | Simple non-linear model |
-| 5 | Random Forest | A | Stronger tree baseline |
-| 6 | KNN or SVM | A | Different model family |
-| 7 | XGBoost baseline | A | Main model baseline |
-| 8 | XGBoost with imbalance handling | A | Try `scale_pos_weight` or threshold tuning |
-| 9 | XGBoost tuned lightly | A | Change 3 to 5 important hyperparameters |
-| 10 | XGBoost selected features | B | Test whether fewer features help |
+| 1 | Simple baseline | A | Logistic Regression or Dummy Classifier |
+| 2 | XGBoost baseline | A | First serious model using all usable features |
+| 3 | XGBoost with imbalance handling | A | Try `scale_pos_weight`, sample weights, or threshold tuning |
+| 4 | XGBoost tuned lightly | A | Change 3 to 5 important hyperparameters |
+| 5 | XGBoost selected features | B | Test whether fewer features help |
 
-CatBoost is optional. If you want to use CatBoost, replace experiment 6 with CatBoost baseline.
+The four XGBoost experiments must vary meaningfully. Do not submit four runs that only change `n_estimators` by a small amount.
+
+Across the XGBoost experiments, you must change at least two of these:
+
+- number of selected features;
+- class imbalance handling;
+- probability threshold;
+- `max_depth`;
+- `learning_rate`;
+- `n_estimators`;
+- `subsample` or `colsample_bytree`;
+- regularization such as `reg_alpha`, `reg_lambda`, or `gamma`.
 
 ### What Counts as Tuning?
 
 Keep tuning small and realistic. You do not need a massive grid search.
 
-For experiment 9, try one of these:
+For experiment 4, try one of these:
 
-- a small `RandomizedSearchCV` with 10 to 20 candidates;
-- a small manual search over 5 to 8 XGBoost configurations;
+- a small `RandomizedSearchCV` with 5 to 10 candidates;
+- a small manual search over 3 to 5 XGBoost configurations;
 - a Codex-assisted search plan that you document clearly.
 
 Do not tune on the test set.
@@ -324,7 +332,7 @@ Use the same chosen threshold when evaluating the final model on the test set.
 
 ## Results Table
 
-Your notebook and summary must include one table with exactly 10 rows.
+Your notebook and summary must include one table with exactly 5 rows.
 
 Required columns:
 
@@ -463,7 +471,7 @@ The notebook must:
 - run top-to-bottom without errors;
 - use a fixed random seed;
 - include the required sections;
-- include the 10-row experiment table;
+- include the 5-row experiment table;
 - keep the test set untouched until the final evaluation.
 
 ### 3. Results Summary
@@ -479,7 +487,7 @@ The summary must include:
 - class imbalance statement;
 - metric choice explanation;
 - feature selection explanation;
-- 10-row experiment table;
+- 5-row experiment table;
 - winning model and why it won;
 - final test results;
 - confusion matrix;
@@ -514,7 +522,7 @@ Do not read your report word for word.
 | Split and leakage control | 10 | Stratified 70/15/15 split and test set held until the end |
 | Preprocessing | 7 | Sensible cleaning, scaling only when needed, target removed from features |
 | Feature sets | 10 | Full feature set and selected feature set with explanation |
-| 10 experiments | 15 | Exactly 10 experiments in one clear table |
+| 5 experiments | 15 | Exactly 5 experiments in one clear table |
 | Metric choice | 14 | Primary metric fits imbalance; accuracy not used as main metric |
 | Overfitting check | 10 | Train score, validation score, and overfit gap reported |
 | Final test evaluation | 8 | Test metrics, confusion matrix, final settings |
@@ -525,36 +533,17 @@ Do not read your report word for word.
 
 ---
 
-## Automatic Deductions
-
-| Issue | Deduction |
-|---|---:|
-| No dummy or simple benchmark model | -10 |
-| Fewer or more than 10 experiments | -10 |
-| Accuracy used as the primary metric | -10 |
-| No `overfit_gap` column | -5 |
-| Test set used before final evaluation | -20 |
-| No stratified split | -8 |
-| No confusion matrix | -5 |
-| No feature importance or interpretation | -5 |
-| Notebook does not run top-to-bottom | -15 |
-| No GitHub repository link submitted | -10 |
-| No AI Usage section | -5 |
-| Video longer than 10 minutes or read word-for-word | -3 |
-
----
-
 ## Recommended Workflow
 
 1. Ask Codex to help create a clean notebook outline.
 2. Load the data and inspect the target distribution.
 3. Create the train, validation, and test split.
 4. Write one reusable evaluation function.
-5. Run the dummy model and logistic regression first.
-6. Add tree models.
-7. Add XGBoost models.
+5. Run the simple baseline first.
+6. Add the XGBoost baseline.
+7. Add imbalance handling and light tuning.
 8. Create the selected feature set.
-9. Fill the 10-row results table.
+9. Fill the 5-row results table.
 10. Pick the final model from validation results.
 11. Evaluate once on the test set.
 12. Write the summary in jot notes.
@@ -570,8 +559,8 @@ Before submitting, verify:
 - [ ] I used only `training/data.csv` for modeling.
 - [ ] I reported class balance in train, validation, and test.
 - [ ] I used a stratified 70/15/15 split.
-- [ ] I ran exactly 10 experiments.
-- [ ] I included one 10-row comparison table.
+- [ ] I ran exactly 5 experiments.
+- [ ] I included one 5-row comparison table.
 - [ ] I chose a primary metric that is not accuracy.
 - [ ] I explained why the metric fits the problem.
 - [ ] I considered Brier score for probability quality.
